@@ -466,7 +466,7 @@ func (p *FrameworkProviderConfig) SetupClient(ctx context.Context, data fwmodels
 	// 4. Header Transport - outer wrapper to inject additional headers we want to apply
 	// before making requests
 	headerTransport := transport_tpg.NewTransportWithHeaders(retryTransport)
-	if !data.RequestReason.IsNull() {
+	if !data.RequestReason.IsNull() && !data.RequestReason.Equal(types.StringValue("")) {
 		headerTransport.Set("X-Goog-Request-Reason", data.RequestReason.ValueString())
 	}
 
@@ -587,7 +587,7 @@ func GetCredentials(ctx context.Context, data fwmodels.ProviderModel, initialCre
 		return googleoauth.Credentials{}
 	}
 
-	if !data.AccessToken.IsNull() {
+	if !data.AccessToken.IsNull() && !data.AccessToken.Equal(types.StringValue("")) {
 		contents, _, err := verify.PathOrContents(data.AccessToken.ValueString())
 		if err != nil {
 			diags.AddError("error loading access token", err.Error())
@@ -595,7 +595,7 @@ func GetCredentials(ctx context.Context, data fwmodels.ProviderModel, initialCre
 		}
 
 		token := &oauth2.Token{AccessToken: contents}
-		if !data.ImpersonateServiceAccount.IsNull() && !initialCredentialsOnly {
+		if !data.ImpersonateServiceAccount.IsNull() && !data.ImpersonateServiceAccount.Equal(types.StringValue("")) && !initialCredentialsOnly {
 			opts := []option.ClientOption{option.WithTokenSource(oauth2.StaticTokenSource(token)), option.ImpersonateCredentials(data.ImpersonateServiceAccount.ValueString(), delegates...), option.WithScopes(clientScopes...)}
 			creds, err := transport.Creds(context.TODO(), opts...)
 			if err != nil {
@@ -612,14 +612,14 @@ func GetCredentials(ctx context.Context, data fwmodels.ProviderModel, initialCre
 		}
 	}
 
-	if !data.Credentials.IsNull() {
+	if !data.Credentials.IsNull() && !data.Credentials.Equal(types.StringValue("")) {
 		contents, _, err := verify.PathOrContents(data.Credentials.ValueString())
 		if err != nil {
 			diags.AddError(fmt.Sprintf("error loading credentials: %s", err), err.Error())
 			return googleoauth.Credentials{}
 		}
 
-		if !data.ImpersonateServiceAccount.IsNull() && !initialCredentialsOnly {
+		if !data.ImpersonateServiceAccount.IsNull() && !data.ImpersonateServiceAccount.Equal(types.StringValue("")) && !initialCredentialsOnly {
 			opts := []option.ClientOption{option.WithCredentialsJSON([]byte(contents)), option.ImpersonateCredentials(data.ImpersonateServiceAccount.ValueString(), delegates...), option.WithScopes(clientScopes...)}
 			creds, err := transport.Creds(context.TODO(), opts...)
 			if err != nil {
@@ -640,7 +640,7 @@ func GetCredentials(ctx context.Context, data fwmodels.ProviderModel, initialCre
 		return *creds
 	}
 
-	if !data.ImpersonateServiceAccount.IsNull() && !initialCredentialsOnly {
+	if !data.ImpersonateServiceAccount.IsNull() && !data.ImpersonateServiceAccount.Equal(types.StringValue("")) && !initialCredentialsOnly {
 		opts := option.ImpersonateCredentials(data.ImpersonateServiceAccount.ValueString(), delegates...)
 		creds, err := transport.Creds(context.TODO(), opts, option.WithScopes(clientScopes...))
 		if err != nil {
